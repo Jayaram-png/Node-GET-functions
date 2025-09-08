@@ -1,66 +1,49 @@
-import Pokedex from "pokedex-promise-v2";
-const P = new Pokedex();
+const axios = require('axios');
 
-// ================== 1. Callback Function ==================
-function fetchPokemonCallback(nameOrId, callback) {
-  P.getPokemonByName(nameOrId, (response, error) => {
-    if (!error) {
-      callback(null, response);
-    } else {
-      callback(error, null);
+// ---------- CALLBACK ----------
+function getPokemonCallback(name, callback) {
+    axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`)
+        .then(response => callback(null, response.data))
+        .catch(error => callback(error));
+}
+
+// ---------- PROMISE ----------
+function getPokemonPromise(name) {
+    return axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`)
+        .then(response => response.data)
+        .catch(error => { throw error });
+}
+
+// ---------- ASYNC/AWAIT ----------
+async function getPokemonAsync(name) {
+    try {
+        const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`);
+        return response.data;
+    } catch (error) {
+        throw error;
     }
-  });
 }
 
-// ================== 2. Promise Function ==================
-function fetchBerryPromise(nameOrArray) {
-  return P.getBerryByName(nameOrArray)
-    .then((response) => response)
-    .catch((error) => {
-      throw error;
-    });
-}
+// ---------- TEST ----------
+console.log("Starting program...");
 
-// ================== 3. Async/Await Function ==================
-async function fetchPokemonSpeciesAsync(nameOrId) {
-  try {
-    const species = await P.getPokemonSpeciesByName(nameOrId);
-    const englishName = species.names.find(
-      (n) => n.language.name === "en"
-    ).name;
-    return englishName;
-  } catch (err) {
-    throw err;
-  }
-}
+console.log("\n=== CALLBACK ===");
+getPokemonCallback('pikachu', (err, data) => {
+    if (err) console.log("Error:", err.message);
+    else console.log("Pokemon Name:", data.name);
+});
 
-// ================== MAIN ==================
+console.log("\n=== PROMISE ===");
+getPokemonPromise('bulbasaur')
+    .then(data => console.log("Pokemon Name:", data.name))
+    .catch(err => console.log("Error:", err.message));
+
+console.log("\n=== ASYNC/AWAIT ===");
 (async () => {
-  console.log("--- CALLBACK FUNCTION ---");
-  fetchPokemonCallback("pikachu", (err, data) => {
-    if (err) console.log("Callback Error:", err);
-    else console.log("Callback Pokemon Name:", data.name);
-
-    // After callback, run promise
-    console.log("\n--- PROMISE FUNCTION ---");
-    fetchBerryPromise(["cheri", "chesto", 5])
-      .then((data) => {
-        console.log(
-          "Promise Berries:",
-          data.map((b) => b.name)
-        );
-
-        // After promise, run async/await
-        console.log("\n--- ASYNC/AWAIT FUNCTION ---");
-        (async () => {
-          try {
-            const name = await fetchPokemonSpeciesAsync("bulbasaur");
-            console.log("Async/Await Pokemon Species Name:", name);
-          } catch (err) {
-            console.log("Async/Await Error:", err);
-          }
-        })();
-      })
-      .catch((err) => console.log("Promise Error:", err));
-  });
+    try {
+        const data = await getPokemonAsync('charmander');
+        console.log("Pokemon Name:", data.name);
+    } catch (err) {
+        console.log("Error:", err.message);
+    }
 })();
